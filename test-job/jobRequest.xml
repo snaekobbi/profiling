@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<jobRequest xmlns='http://www.daisy.org/ns/pipeline/data'>
+	<script href='http://0.0.0.0:8181/ws/scripts/dtbook-to-pef'/>
+	<input name='source'>
+		<item value='file:/mnt/job/dtbook.xml'/>
+	</input>
+    <option name="transform">(formatter:dotify)(translator:nlb)(dots:6)(grade:0)</option>
+</jobRequest>
