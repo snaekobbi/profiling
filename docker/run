@@ -1,0 +1,61 @@
+#!/bin/bash
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $DIR
+
+source $DIR/../config
+if [ "$YOURKIT_HOME" = "" ]; then
+    echo "YOURKIT_HOME not set, using this default: $YOURKIT_HOME" 1>&2
+    exit 1
+fi
+
+# start docker container
+rm -rf "$DIR/target" && mkdir "$DIR/target"
+IMAGE_ID=$(docker build . | tail -n 1 | sed 's/.* //')
+
+YOURKIT_PORT=10001
+PIPELINE_PORT=8181
+
+CONTAINER_ID=$(docker run -d -v "$DIR/../resources":"/mnt/resources" \
+                             -v "$DIR/target":"/mnt/target" \
+                             -v "$YOURKIT_HOME/bin/linux-x86-64/":"/mnt/yourkit/":ro \
+                             -p ${PIPELINE_PORT}:${PIPELINE_PORT} \
+                             -p ${YOURKIT_PORT}:${YOURKIT_PORT} \
+                             $IMAGE_ID)
+
+YOURKIT_HOST=$(docker-machine ip default):${YOURKIT_PORT}
+PIPELINE_WS=$(docker-machine ip default):${PIPELINE_PORT}/ws
+
+# connect yourkit
+read -n1 -s -p "Now, connect to ${YOURKIT_HOST} from YourKit and press enter to continue..."
+echo
+if [ "`curl "http://${PIPELINE_WS}/alive" 2>/dev/null | grep '<alive' | wc -l`" = "0" ]; then
+    echo "Engine is not alive yet, waiting 10 seconds more..."
+    sleep 10
+    if [ "`curl "http://${PIPELINE_WS}/alive" 2>/dev/null | grep '<alive' | wc -l`" = "0" ]; then
+        echo "Engine is not alive, aborting..."
+        docker kill $CONTAINER_ID
+        exit
+    fi
+fi
+
+# submit job
+echo "Submitting job..."
+curl -X POST -d @"jobRequest.xml" --header "Content-Type: application/xml" "http://${PIPELINE_WS}/jobs" 2>/dev/null \
+    | sed 's/</\n</g' | grep '<job' | sed 's/ /\n/g' | grep -v '<job' | grep -v 'xmlns'
+
+# wait until job is done
+sleep 5
+if [ "`curl ${PIPELINE_WS}/jobs 2>/dev/null | sed 's/</\n</g' | grep '<job ' | wc -l`" = "0" ]; then
+    echo "Job was not successfully submitted; aborting..."
+    docker kill $CONTAINER_ID
+    
+else
+    STATUS="RUNNING"
+    while [ "$STATUS" = "RUNNING" ]; do
+        STATUS="`curl ${PIPELINE_WS}/jobs 2>/dev/null | sed 's/</\n</g' | grep '<job ' | sed 's/ /\n/g' | grep 'status=' | sed 's/.*="//' | sed 's/".*//'`"
+        echo "$STATUS (`date`)"
+        sleep 5
+    done
+    cat "target/done"
+fi

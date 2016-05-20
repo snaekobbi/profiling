@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# start pipeline and wait for job
+
 service ssh start
 service pipeline2d start
 while [ "`curl localhost:8181/ws/jobs 2>/dev/null | sed 's/</\n</g' | grep '<job ' | grep -v 'status=\"IDLE\"' | grep -v 'status=\"RUNNING\"' | wc -l`" = "0" ]; do

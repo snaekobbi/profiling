@@ -10,8 +10,10 @@ RUN sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/ss
 RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
 ENV NOTVISIBLE "in users profile"
 RUN echo "export VISIBLE=now" >> /etc/profile
-RUN sed -i 's/\(eval exec \"\\\"\$JAVA\"\\\" \"\$JAVA_OPTS\"\)/\1 -agentpath:\/mnt\/yourkit\/libyjpagent.so/' /opt/daisy-pipeline2/bin/pipeline2
+RUN sed -i 's/\(eval exec \"\\\"\$JAVA\"\\\" \"\$JAVA_OPTS\"\)/\1 -agentpath:\/mnt\/yourkit\/libyjpagent.so=listen=0.0.0.0:10001/' /opt/daisy-pipeline2/bin/pipeline2
 
-EXPOSE 22
+ADD pipeline.sh /usr/bin/
 
-CMD /mnt/job/run.sh
+EXPOSE 10001
+
+CMD /usr/bin/pipeline.sh

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+cd $(dirname $0)
+source ../config
+if [ "$YOURKIT_HOME" = "" ]; then
+    echo "YOURKIT_HOME not set, using this default: $YOURKIT_HOME" 1>&2
+    exit 1
+fi
+mvn clean test -Dyourkit.home="$YOURKIT_HOME" > log

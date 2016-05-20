@@ -1,0 +1,4 @@
+# must be compatible with API version 12.0.6
+# for docker runner, bin/linux-x86-64 must contain libyjpagent.so
+YOURKIT_HOME="$HOME/yourkit/yjp-12.0.6"
+
