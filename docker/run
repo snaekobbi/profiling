@@ -9,6 +9,11 @@ if [ "$YOURKIT_HOME" = "" ]; then
     exit 1
 fi
 
+# fetch YourKit probes JAR
+# FIXME: possibly needs to be downloaded from Maven
+PROBES_VERSION=1.0.0-SNAPSHOT
+cp ${HOME}/.m2/repository/org/daisy/pipeline/yourkit-probes/${PROBES_VERSION}/yourkit-probes-${PROBES_VERSION}.jar yourkit-probes.jar
+
 # start docker container
 rm -rf "$DIR/target" && mkdir "$DIR/target"
 IMAGE_ID=$(docker build . | tail -n 1 | sed 's/.* //')
@@ -18,7 +23,7 @@ PIPELINE_PORT=8181
 
 CONTAINER_ID=$(docker run -d -v "$DIR/../resources":"/mnt/resources" \
                              -v "$DIR/target":"/mnt/target" \
-                             -v "$YOURKIT_HOME/bin/linux-x86-64/":"/mnt/yourkit/":ro \
+                             -v "$YOURKIT_HOME/":"/mnt/yourkit/":ro \
                              -p ${PIPELINE_PORT}:${PIPELINE_PORT} \
                              -p ${YOURKIT_PORT}:${YOURKIT_PORT} \
                              $IMAGE_ID)
