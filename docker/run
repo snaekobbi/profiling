@@ -26,6 +26,13 @@ CONTAINER_ID=$(docker run -d -v "$DIR/../resources":"/mnt/resources" \
 YOURKIT_HOST=$(docker-machine ip default):${YOURKIT_PORT}
 PIPELINE_WS=$(docker-machine ip default):${PIPELINE_PORT}/ws
 
+abort() {
+    # TODO: also store Yourkit logs? (/var/opt/daisy-pipeline2/.yjp/log/...)
+    docker logs $CONTAINER_ID > target/log
+    docker kill $CONTAINER_ID
+    exit 1
+}
+
 # connect yourkit
 read -n1 -s -p "Now, connect to ${YOURKIT_HOST} from YourKit and press enter to continue..."
 echo
@@ -34,8 +41,7 @@ if [ "`curl "http://${PIPELINE_WS}/alive" 2>/dev/null | grep '<alive' | wc -l | 
     sleep 10
     if [ "`curl "http://${PIPELINE_WS}/alive" 2>/dev/null | grep '<alive' | wc -l | tr -d '[[:space:]]'`" = "0" ]; then
         echo "Engine is not alive, aborting..."
-        docker kill $CONTAINER_ID
-        exit
+        abort
     fi
 fi
 
@@ -48,8 +54,7 @@ curl -X POST -d @"jobRequest.xml" --header "Content-Type: application/xml" "http
 sleep 5
 if [ "`curl ${PIPELINE_WS}/jobs 2>/dev/null | sed 's/</\n</g' | grep '<job ' | wc -l | tr -d '[[:space:]]'`" = "0" ]; then
     echo "Job was not successfully submitted; aborting..."
-    docker kill $CONTAINER_ID
-    
+    abort
 else
     STATUS="RUNNING"
     while [ "$STATUS" = "RUNNING" ]; do
@@ -57,5 +62,8 @@ else
         echo "$STATUS (`date`)"
         sleep 5
     done
-    cat "target/done"
+    JOB_ID="`curl ${PIPELINE_WS}/jobs 2>/dev/null | sed 's/.*id="//g' | sed 's/".*//g'`"
+    curl ${PIPELINE_WS}/jobs/$JOB_ID 2>/dev/null | sed 's/</\n</g' > target/done
+    cat target/done
+    docker kill $CONTAINER_ID
 fi
