@@ -27,9 +27,14 @@ CONTAINER_ID=$(docker run -d -v "$DIR/../resources":"/mnt/resources" \
                              -p ${PIPELINE_PORT}:${PIPELINE_PORT} \
                              -p ${YOURKIT_PORT}:${YOURKIT_PORT} \
                              $IMAGE_ID)
-
-YOURKIT_HOST=$(docker-machine ip default):${YOURKIT_PORT}
-PIPELINE_WS=$(docker-machine ip default):${PIPELINE_PORT}/ws
+if [ command -v docker-machine >/dev/null 2>&1 ]; then
+    YOURKIT_HOST=$(docker-machine ip default):${YOURKIT_PORT}
+    PIPELINE_WS=$(docker-machine ip default):${PIPELINE_PORT}/ws
+else
+    CONTAINER_IP=$(docker inspect $CONTAINER_ID | grep '"IPAddress"' | head -n 1 | sed 's/"[^"]*$//' | sed 's/.*"//')
+    YOURKIT_HOST=${CONTAINER_IP}:${YOURKIT_PORT}
+    PIPELINE_WS=${CONTAINER_IP}:${PIPELINE_PORT}/ws
+fi
 
 abort() {
     # TODO: also store Yourkit logs? (/var/opt/daisy-pipeline2/.yjp/log/...)
