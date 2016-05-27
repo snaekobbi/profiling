@@ -76,60 +76,60 @@ as well as the time per megabyte of input data this step takes.
 ### O(1): These seem fairly independent of the input filesize:
 
 `[progress pef:store 80 px:pef-to-html.convert]` Converting PEF to HTML preview using the BRF table '(locale:no)'
-    - 1.295 (2.59 s/MB)
-    - 1.663 (1.663 s/MB)
-    - 4.735 (1.972 s/MB)
+- 1.295 (2.59 s/MB)
+- 1.663 (1.663 s/MB)
+- 4.735 (1.972 s/MB)
 
 `[progress pxi:css-to-obfl 1 pxi:recursive-parse-stylesheet-and-make-pseudo-elements]` Recursively parse stylesheet and make pseudo elements
-    - 1.799 (3.598 s/MB)
-    - 1.910 (1.910 s/MB)
-    - 4.481 (1.867 s/MB)
+- 1.799 (3.598 s/MB)
+- 1.910 (1.910 s/MB)
+- 4.481 (1.867 s/MB)
 
 ### O(n): These seem to have a linear correlation with the input filesize:
 
 `[progress px:dotify-transform 2 dotify:obfl-to-pef]`
-    - 4.737 (9.474 s/MB)
-    - 7.091 (7.091 s/MB)
-    - 19.549 (8.145 s/MB)
+- 4.737 (9.474 s/MB)
+- 7.091 (7.091 s/MB)
+- 19.549 (8.145 s/MB)
 
 `[progress px:dotify-transform 27 px:transform]`
-    - 67.783 (135.566 s/MB)
-    - 83.832 (83.832 s/MB)
-    - 200.515 (83.547 s/MB)
+- 67.783 (135.566 s/MB)
+- 83.832 (83.832 s/MB)
+- 200.515 (83.547 s/MB)
 
 ### These seem to have a non-linear correlation (polynomial or exponential) with the input filesize:
 
 `[progress pxi:css-to-obfl 14 css:shift-string-set]` Move css:string-set attributes.
-    - 5.627 (11.254 s/MB)
-    - 10.966 (10.966 s/MB)
-    - 85.618 (35.674 s/MB)
+- 5.627 (11.254 s/MB)
+- 10.966 (10.966 s/MB)
+- 85.618 (35.674 s/MB)
 
 `[progress px:dotify-transform 1 pxi:obfl-normalize-space]`
-    - 4.861 (9.722 s/MB)
-    - 14.799 (14.799 s/MB)
-    - 120.736 (50.306 s/MB)
+- 4.861 (9.722 s/MB)
+- 14.799 (14.799 s/MB)
+- 120.736 (50.306 s/MB)
 
 `[progress pxi:css-to-obfl 1 pxi:shift-obfl-marker]` Move css:_obfl-marker attributes.
-    - 10.915 (21.83 s/MB)
-    - 18.996 (18.996 s/MB)
-    - 163.869 (68.278 s/MB)
+- 10.915 (21.83 s/MB)
+- 18.996 (18.996 s/MB)
+- 163.869 (68.278 s/MB)
 
 `[progress pxi:css-to-obfl 1 css:shift-id]` Move css:id attributes to css:box elements.
-    - 12.984 (25.968 s/MB)
-    - 25.289 (25.289 s/MB)
-    - 220.268 (91.778 s/MB)
-    - 97% of the time spent are at p:label-elements here: https://github.com/daisy/pipeline-mod-braille/blob/c108040b4dc4669ec8d8bc82e800967e1f8efdb3/pipeline-braille-utils/css-utils/css-utils/src/main/resources/xml/shift-id.xpl#L32
+- 12.984 (25.968 s/MB)
+- 25.289 (25.289 s/MB)
+- 220.268 (91.778 s/MB)
+- 97% of the time spent are at p:label-elements here: https://github.com/daisy/pipeline-mod-braille/blob/c108040b4dc4669ec8d8bc82e800967e1f8efdb3/pipeline-braille-utils/css-utils/css-utils/src/main/resources/xml/shift-id.xpl#L32
 
 `[progress pxi:css-to-obfl.for-each-margin-attributes.item 10 p:delete]` Remove text nodes from block boxes with no line boxes.
-    - 17.887 (35.774 s/MB)
-    - 22.234 (22.234 s/MB)
-    - 514.000 (214.166 s/MB)
-    - 99.9% of the time spent are at p:delete here: https://github.com/daisy/pipeline-mod-braille/blob/c108040b4dc4669ec8d8bc82e800967e1f8efdb3/pipeline-braille-utils/dotify-utils/dotify-formatter/src/main/resources/xml/css-to-obfl.xpl#L564
+- 17.887 (35.774 s/MB)
+- 22.234 (22.234 s/MB)
+- 514.000 (214.166 s/MB)
+- 99.9% of the time spent are at p:delete here: https://github.com/daisy/pipeline-mod-braille/blob/c108040b4dc4669ec8d8bc82e800967e1f8efdb3/pipeline-braille-utils/dotify-utils/dotify-formatter/src/main/resources/xml/css-to-obfl.xpl#L564
 
 `[progress pxi:css-to-obfl.split-sections.section 50 css:split]` Page and volume split.
-    - 76.137 (152.274 s/MB)
-    - 165.050 (165.050 s/MB)
-    - 832.405 (346.835 s/MB)
-    - 95% of the time spent are at p:delete here: https://github.com/daisy/pipeline-mod-braille/blob/c108040b4dc4669ec8d8bc82e800967e1f8efdb3/pipeline-braille-utils/css-utils/css-utils/src/main/resources/xml/split.xpl#L67
+- 76.137 (152.274 s/MB)
+- 165.050 (165.050 s/MB)
+- 832.405 (346.835 s/MB)
+- 95% of the time spent are at p:delete here: https://github.com/daisy/pipeline-mod-braille/blob/c108040b4dc4669ec8d8bc82e800967e1f8efdb3/pipeline-braille-utils/css-utils/css-utils/src/main/resources/xml/split.xpl#L67
 
 Maybe try rewriting the problematic p:lavel-elements and p:delete in XSLT?
