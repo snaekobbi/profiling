@@ -91,11 +91,13 @@ as well as the time per megabyte of input data this step takes.
 - 4.737 (9.474 s/MB)
 - 7.091 (7.091 s/MB)
 - 19.549 (8.145 s/MB)
+- dotify:obfl-to-pef here: https://github.com/daisy/pipeline-mod-braille/blob/c108040b4dc4669ec8d8bc82e800967e1f8efdb3/pipeline-braille-utils/dotify-utils/dotify-formatter/src/main/resources/xml/transform/dotify-transform.xpl#L67
 
 `[progress px:dotify-transform 27 px:transform]`
 - 67.783 (135.566 s/MB)
 - 83.832 (83.832 s/MB)
 - 200.515 (83.547 s/MB)
+- px:transform here: https://github.com/daisy/pipeline-mod-braille/blob/c108040b4dc4669ec8d8bc82e800967e1f8efdb3/pipeline-braille-utils/dotify-utils/dotify-formatter/src/main/resources/xml/transform/dotify-transform.xpl#L39
 
 ### These seem to have a non-linear correlation (polynomial or exponential) with the input filesize:
 
@@ -103,16 +105,19 @@ as well as the time per megabyte of input data this step takes.
 - 5.627 (11.254 s/MB)
 - 10.966 (10.966 s/MB)
 - 85.618 (35.674 s/MB)
+- 99.7% of the time spent are at p:xslt here: https://github.com/daisy/pipeline-mod-braille/blob/c108040b4dc4669ec8d8bc82e800967e1f8efdb3/pipeline-braille-utils/css-utils/css-utils/src/main/resources/xml/shift-string-set.xpl#L31
 
 `[progress px:dotify-transform 1 pxi:obfl-normalize-space]`
 - 4.861 (9.722 s/MB)
 - 14.799 (14.799 s/MB)
 - 120.736 (50.306 s/MB)
+- 99.9% of the time spent are at p:xslt here: https://github.com/daisy/pipeline-mod-braille/blob/c108040b4dc4669ec8d8bc82e800967e1f8efdb3/pipeline-braille-utils/dotify-utils/dotify-formatter/src/main/resources/xml/obfl-normalize-space.xpl#L11
 
 `[progress pxi:css-to-obfl 1 pxi:shift-obfl-marker]` Move css:_obfl-marker attributes.
 - 10.915 (21.83 s/MB)
 - 18.996 (18.996 s/MB)
 - 163.869 (68.278 s/MB)
+- 99.8% of the time spent are at p:xslt here: https://github.com/daisy/pipeline-mod-braille/blob/c108040b4dc4669ec8d8bc82e800967e1f8efdb3/pipeline-braille-utils/dotify-utils/dotify-formatter/src/main/resources/xml/shift-obfl-marker.xpl#L30
 
 `[progress pxi:css-to-obfl 1 css:shift-id]` Move css:id attributes to css:box elements.
 - 12.984 (25.968 s/MB)
@@ -132,4 +137,4 @@ as well as the time per megabyte of input data this step takes.
 - 832.405 (346.835 s/MB)
 - 95% of the time spent are at p:delete here: https://github.com/daisy/pipeline-mod-braille/blob/c108040b4dc4669ec8d8bc82e800967e1f8efdb3/pipeline-braille-utils/css-utils/css-utils/src/main/resources/xml/split.xpl#L67
 
-Maybe try rewriting the problematic p:lavel-elements and p:delete in XSLT?
+Maybe try rewriting the problematic `p:label-elements` and `p:delete` in XSLT?
