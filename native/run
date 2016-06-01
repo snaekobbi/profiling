@@ -1,0 +1,39 @@
+#!/bin/bash
+
+cd $(dirname $0)
+source ../config
+
+PIPELINE_PORT=8181
+PIPELINE_WS=localhost:${PIPELINE_PORT}/ws
+
+if [ "`curl "http://${PIPELINE_WS}/alive" 2>/dev/null | grep '<alive' | wc -l | tr -d '[[:space:]]'`" = "0" ]; then
+    echo "Engine is not alive, aborting..." 1>&2
+    exit 1
+fi
+
+echo "Submitting job..."
+rm -r execution.log detailed.log
+if ! which dp2; then
+    echo "dp2 not on classpath, aborting..." 1>&2
+    exit 1
+fi
+DTBOOK=../resources/working-dtbooks/Test.DTBook.4.4.67.notes.xml
+dp2 nlb:dtbook-to-pef --i-source "$DTBOOK" --background
+
+# wait until job is done
+sleep 5
+if [ "`curl ${PIPELINE_WS}/jobs 2>/dev/null | sed 's/</\n</g' | grep '<job ' | wc -l | tr -d '[[:space:]]'`" = "0" ]; then
+    echo "Job was not successfully submitted; aborting..."
+    abort
+else
+    STATUS="RUNNING"
+    while [ "$STATUS" = "RUNNING" ]; do
+        STATUS="`curl ${PIPELINE_WS}/jobs 2>/dev/null | sed 's/</\n</g' | grep '<job ' | sed 's/ /\n/g' | grep 'status=' | sed 's/.*="//' | sed 's/".*//'`"
+        echo "$STATUS (`date`)"
+        sleep 5
+    done
+    JOB_ID="`curl ${PIPELINE_WS}/jobs 2>/dev/null | sed 's/.*id="//g' | sed 's/".*//g'`"
+    curl ${PIPELINE_WS}/jobs/$JOB_ID 2>/dev/null | sed 's/</\n</g' > execution.log
+    curl ${PIPELINE_WS}/jobs/$JOB_ID/log 2>/dev/null > detailed.log
+    dp2 delete $JOB_ID
+fi
