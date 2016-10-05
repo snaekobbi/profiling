@@ -1,0 +1,21 @@
+#!/bin/bash
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $DIR
+
+docker build .
+IMAGE_ID=$(docker build . | tail -n 1 | sed 's/.* //')
+
+if [ "$1" = "" ]; then
+    if [ "$COMMIT" = "" ]; then
+        echo "No commit/tag/branch provided; using 'master'"
+        COMMIT="master"
+    fi
+else
+    COMMIT="$1"
+fi
+
+docker run -it --rm \
+            -v "`pwd`/target/":/tmp/target/ \
+            --env COMMIT=$COMMIT \
+            $IMAGE_ID
