@@ -6,9 +6,6 @@ LOGFILE=/tmp/target/output.log
 MAX_TIMEOUT=600
 SUCCESS_TIME=60
 
-echo >> $LOGFILE
-echo "# Speed tests for `cd ~/pipeline && git rev-parse --short $COMMIT` ($COMMIT) - `date`" >> $LOGFILE
-
 # initial values for timer
 TIMER_START=`date --utc +"%s"`
 TIMER_END=$TIMER_START
@@ -59,14 +56,20 @@ function status {
     fi
 }
 
-timer_start "Download Pipeline 2 (incremental)"
+timer_start "Download Pipeline 2"
+cd ~
+git clone https://github.com/daisy/pipeline.git
 cd ~/pipeline
-git fetch -a
 git checkout "$COMMIT"
 timer_end "success"
 
-timer_start "Build Pipeline 2 (incremental)"
-make
+echo >> $LOGFILE
+echo "# Speed tests for `cd ~/pipeline && git rev-parse --short $COMMIT` ($COMMIT) - `date`" >> $LOGFILE
+
+timer_start "Build Pipeline 2"
+cd ~/pipeline
+mkdir -p .maven-cache
+make dist-zip
 timer_end "success"
 
 timer_start "Install Pipeline 2"
