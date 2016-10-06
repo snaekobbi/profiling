@@ -82,7 +82,8 @@ timer_end "success"
 
 function run_speed_test {
     BOOK_ID="$1"
-    TITLE="$2 ($BOOK_ID / filesize `ls -lh ~/src/resources/$BOOK_ID.xml | awk '{print $5}'`)"
+    FILESIZE="`ls -lh ~/src/resources/$BOOK_ID.xml | awk '{print $5}'`"
+    TITLE="$2 ($BOOK_ID / filesize $FILESIZE)"
     
     if [ $TIMER -lt $SUCCESS_TIME ]; then # only continue if previous test took less than $SUCCESS_TIME
         timer_start "$TITLE"
@@ -103,7 +104,8 @@ function run_speed_test {
 function run_speed_test_parallel {
     COUNT="$1"
     BOOK_ID="$2"
-    TITLE="$3 x$COUNT ($BOOK_ID / filesize `ls -lh 501035.xml | awk '{print $5}'`)"
+    FILESIZE="`ls -lh ~/src/resources/$BOOK_ID.xml | awk '{print $5}'`"
+    TITLE="$3 x$COUNT ($BOOK_ID / filesize $FILESIZE)"
     
     timer_start "$TITLE"
     for i in `seq 1 $COUNT`; do
@@ -124,7 +126,7 @@ function run_speed_test_parallel {
             TEST_STATUS="error"
         fi
     fi
-    timer_end "$TEST_STATUS"
+    timer_end $COUNT "$TEST_STATUS"
     TOTAL_SPEED_TEST_TIME="`expr $TOTAL_SPEED_TEST_TIME + $TIMER`"
 }
 
@@ -137,10 +139,9 @@ run_speed_test 553184 "Speed test #3"
 run_speed_test 554664 "Speed test #4"
 run_speed_test 501035 "Speed test #5"
 
-run_speed_test $LAST_SUCCESSFUL_BOOK "Speed test sequential #1"
-run_speed_test $LAST_SUCCESSFUL_BOOK "Speed test sequential #2"
-run_speed_test $LAST_SUCCESSFUL_BOOK "Speed test sequential #3"
-run_speed_test $LAST_SUCCESSFUL_BOOK "Speed test sequential #4"
+TIMER=0 && run_speed_test $LAST_SUCCESSFUL_BOOK "Speed test sequential #1"
+TIMER=0 && run_speed_test $LAST_SUCCESSFUL_BOOK "Speed test sequential #2"
+TIMER=0 && run_speed_test $LAST_SUCCESSFUL_BOOK "Speed test sequential #3"
 
 SUCCESS_TIME=`expr $SUCCESS_TIME \* 4`
 if [ $SUCCESS_TIME -gt $MAX_TIMEOUT ]; then
