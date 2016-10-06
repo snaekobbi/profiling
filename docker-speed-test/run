@@ -16,6 +16,7 @@ else
 fi
 
 docker run -it --rm \
+            --cpuset-cpus="1" \
             -v "`pwd`/target/":/tmp/target/ \
             --env COMMIT=$COMMIT \
             $IMAGE_ID

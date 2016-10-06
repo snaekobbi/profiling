@@ -27,7 +27,7 @@ function timer_end {
     TIMER_END=`date --utc +"%s"`
     TIMER=`expr $TIMER_END - $TIMER_START`
     if [ $TIMER -gt $SUCCESS_TIME ] && [ "$STATUS" = "success" ]; then
-        STATUS="warning"
+        STATUS="error"
     fi
     LAST_TIMER_STATUS="$STATUS"
     echo "$TIMER_NAME: ${TIMER}s ($STATUS)" | tee -a $LOGFILE
@@ -40,14 +40,14 @@ function lastid {
 function status {
     JOB_ID="`lastid`"
     if [ "$JOB_ID" = "" ]; then
-        return "failed"
+        return "failure"
     else
         STATUS="`timeout 10 ~/daisy-pipeline/cli/dp2 status $JOB_ID 2>&1 | grep 'Status:' | sed 's/.*[ \t]//'`"
         if [ "$STATUS" = "DONE" ]; then
             STATUS="success"
         else
             if [ "$STATUS" = "ERROR" ]; then
-                STATUS="failed"
+                STATUS="failure"
             else
                 STATUS="error"
             fi
@@ -63,8 +63,7 @@ cd ~/pipeline
 git checkout "$COMMIT"
 timer_end "success"
 
-echo >> $LOGFILE
-echo "# Speed tests for `cd ~/pipeline && git rev-parse --short $COMMIT` ($COMMIT) - `date`" >> $LOGFILE
+echo "# Speed tests for `cd ~/pipeline && git rev-parse --short $COMMIT` ($COMMIT) - `date`" > $LOGFILE
 
 timer_start "Build Pipeline 2"
 cd ~/pipeline
@@ -83,24 +82,70 @@ timer_end "success"
 
 function run_speed_test {
     BOOK_ID="$1"
-    TITLE="$2"
+    TITLE="$2 ($BOOK_ID / filesize `ls -lh ~/src/resources/$BOOK_ID.xml | awk '{print $5}'`)"
     
     if [ $TIMER -lt $SUCCESS_TIME ]; then # only continue if previous test took less than $SUCCESS_TIME
         timer_start "$TITLE"
-        timeout $MAX_TIMEOUT daisy-pipeline/cli/dp2 dtbook-to-pef --persistent --source ~/src/resources/$BOOK_ID.xml --output /tmp/$BOOK_ID/
-        timer_end "`status`"
+        OUT_DIR="`tempfile`"
+        rm $OUT_DIR
+        timeout $MAX_TIMEOUT daisy-pipeline/cli/dp2 dtbook-to-pef --persistent --source ~/src/resources/$BOOK_ID.xml --output $OUT_DIR
+        TEST_STATUS="`status`"
+        timer_end "$TEST_STATUS"
         TOTAL_SPEED_TEST_TIME="`expr $TOTAL_SPEED_TEST_TIME + $TIMER`"
+        if [ "$TEST_STATUS" = "success" ]; then
+            LAST_SUCCESSFUL_BOOK=$BOOK_ID
+        fi
     else
         TOTAL_SPEED_TEST_TIME="`expr $TOTAL_SPEED_TEST_TIME + $MAX_TIMEOUT`"
     fi
 }
 
-TOTAL_SPEED_TEST_TIME=0
+function run_speed_test_parallel {
+    COUNT="$1"
+    BOOK_ID="$2"
+    TITLE="$3 x$COUNT ($BOOK_ID / filesize `ls -lh 501035.xml | awk '{print $5}'`)"
+    
+    timer_start "$TITLE"
+    for i in `seq 1 $COUNT`; do
+        OUT_DIR="`tempfile`"
+        rm $OUT_DIR
+        timeout $MAX_TIMEOUT daisy-pipeline/cli/dp2 dtbook-to-pef --persistent --source ~/src/resources/$BOOK_ID.xml --output $OUT_DIR &
+    done
+    for job in `jobs -p`; do
+        wait $job
+    done
+    TEST_STATUS="`timeout 10 ~/daisy-pipeline/cli/dp2 jobs 2>&1 | tail -n $COUNT | sed 's/[ \t].*//' | xargs ~/daisy-pipeline/cli/dp2 status 2>&1 | grep 'Status:' | sed 's/.*[ \t]//' | uniq | paste -s -d" "`"
+    if [ "echo $TEST_STATUS | grep ERROR | wc -l" = "1" ]; then
+        TEST_STATUS="failure"
+    else
+        if [ "$TEST_STATUS" = "DONE" ]; then
+            TEST_STATUS="success"
+        else
+            TEST_STATUS="error"
+        fi
+    fi
+    timer_end "$TEST_STATUS"
+    TOTAL_SPEED_TEST_TIME="`expr $TOTAL_SPEED_TEST_TIME + $TIMER`"
+}
 
-run_speed_test 552974 "Speed test #1 (552974 / filesize 2 kB)"
-run_speed_test 552739 "Speed test #2 (552739 / filesize 0.5 MB)"
-run_speed_test 553184 "Speed test #3 (553184 / filesize 1 MB)"
-run_speed_test 554664 "Speed test #4 (554664 / filesize 2.4 MB)"
-run_speed_test 501035 "Speed test #5 (501035 / filesize 7.3 MB)"
+TOTAL_SPEED_TEST_TIME=0
+LAST_SUCCESSFUL_BOOK=""
+
+run_speed_test 552974 "Speed test #1"
+run_speed_test 552739 "Speed test #2"
+run_speed_test 553184 "Speed test #3"
+run_speed_test 554664 "Speed test #4"
+run_speed_test 501035 "Speed test #5"
+
+run_speed_test $LAST_SUCCESSFUL_BOOK "Speed test sequential #1"
+run_speed_test $LAST_SUCCESSFUL_BOOK "Speed test sequential #2"
+run_speed_test $LAST_SUCCESSFUL_BOOK "Speed test sequential #3"
+run_speed_test $LAST_SUCCESSFUL_BOOK "Speed test sequential #4"
+
+SUCCESS_TIME=`expr $SUCCESS_TIME \* 4`
+if [ $SUCCESS_TIME -gt $MAX_TIMEOUT ]; then
+    SUCCESS_TIME=$MAX_TIMEOUT
+fi
+run_speed_test_parallel 4 $LAST_SUCCESSFUL_BOOK "Speed test parallel"
 
 echo "Total test time: ${TOTAL_SPEED_TEST_TIME}s ($LAST_TIMER_STATUS)" | tee -a $LOGFILE
