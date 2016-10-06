@@ -15,7 +15,7 @@ else
     COMMIT="$1"
 fi
 
-docker run -it --rm \
+docker run -i --rm \
             --cpuset-cpus="1" \
             -v "`pwd`/target/":/tmp/target/ \
             --env COMMIT=$COMMIT \
