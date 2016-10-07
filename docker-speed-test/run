@@ -29,7 +29,7 @@ cat target/output.log | grep '^Speed test' | grep parallel | awk '{print $8 " " 
 if [ "$GITHUB_STATUS_ENABLE" = "" ]; then
     GITHUB_STATUS_ENABLE=""
 fi
-if [ "$GIT_COMMIT" != "" ]; then
+if [ "$GIT_COMMIT" = "" ]; then
     echo "GIT_COMMIT environment variable not available; disabling git commit status updates."
     GITHUB_STATUS_ENABLE=""
 fi
