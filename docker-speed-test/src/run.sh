@@ -2,7 +2,7 @@
 #set -e
 #set -x
 
-LOGFILE=/tmp/target/output.log
+LOGFILE=/tmp/output.log
 
 if [ "$MAX_TIMEOUT" = "" ]; then
     MAX_TIMEOUT=600
