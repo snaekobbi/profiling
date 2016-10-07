@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ "$GIT_COMMIT" = "" ]; then
+    # Script is often started with daisy/pipeline repo as working directory (at least in Jenkins)
+    GIT_COMMIT="`git rev-parse HEAD 2>/dev/null`"
+fi
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
@@ -46,7 +51,7 @@ else
 fi
 
 if [ "$GITHUB_STATUS_ENABLE" != "" ]; then
-    curl "https://api.github.com/repos/daisy/pipeline/statuses/$GIT_COMMIT?access_token=$ACCESS_TOKEN" \
+    curl "https://api.github.com/repos/daisy/pipeline/statuses/$GIT_COMMIT?access_token=$GITHUB_ACCESS_TOKEN" \
         -H "Content-Type: application/json" \
         -X POST \
         -d "{\"state\": \"pending\", \"description\": \"Started speed test\", \"context\": \"$GITHUB_STATUS_CONTEXT\"}"
@@ -58,7 +63,7 @@ docker run -i --rm \
             $IMAGE_ID
 
 if [ "$GITHUB_STATUS_ENABLE" != "" ]; then
-    curl "https://api.github.com/repos/daisy/pipeline/statuses/$GIT_COMMIT?access_token=$ACCESS_TOKEN" \
+    curl "https://api.github.com/repos/daisy/pipeline/statuses/$GIT_COMMIT?access_token=$GITHUB_ACCESS_TOKEN" \
         -H "Content-Type: application/json" \
         -X POST \
         -d "{\"state\": \"pending\", \"description\": \"`cat $TEMPFILE | grep -v ': *$' | paste -s -d"#" | sed 's/#/\\\\n/g'`\", \"context\": \"$GITHUB_STATUS_CONTEXT\"}"
