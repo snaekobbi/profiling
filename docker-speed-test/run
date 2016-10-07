@@ -8,24 +8,6 @@ fi
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
-# Create max 140 character long multiline status message usable for github commit status. Format as:
-# 123456s                         <-- total time used to compare across commits
-# 1.9K: 1000s                     <-- first convertion time
-# 497K: 1000s                     <-- second conversion time
-# 955K: 1000s                     <-- third conversion time
-# 2.4M: 1000s                     <-- fourth conversion time
-# 7.0M: 1000s 1000s 1000s 1000s   <-- fifth conversion time(s)
-# 7.0M parallel x4: 4000s         <-- total time running in parallel
-
-TEMPFILE="`tempfile`"
-cat target/output.log | grep '^Total test time:' | awk '{print $4}' > $TEMPFILE
-echo "`ls -lh src/resources/552974.xml | awk '{print $5}'`: `cat target/output.log | grep 552974 | grep '^Speed test' | grep -v parallel | sed 's/.*://' | awk '{print $1}' | paste -s -d" "`" >> $TEMPFILE
-echo "`ls -lh src/resources/552739.xml | awk '{print $5}'`: `cat target/output.log | grep 552739 | grep '^Speed test' | grep -v parallel | sed 's/.*://' | awk '{print $1}' | paste -s -d" "`" >> $TEMPFILE
-echo "`ls -lh src/resources/553184.xml | awk '{print $5}'`: `cat target/output.log | grep 553184 | grep '^Speed test' | grep -v parallel | sed 's/.*://' | awk '{print $1}' | paste -s -d" "`" >> $TEMPFILE
-echo "`ls -lh src/resources/554664.xml | awk '{print $5}'`: `cat target/output.log | grep 554664 | grep '^Speed test' | grep -v parallel | sed 's/.*://' | awk '{print $1}' | paste -s -d" "`" >> $TEMPFILE
-echo "`ls -lh src/resources/501035.xml | awk '{print $5}'`: `cat target/output.log | grep 501035 | grep '^Speed test' | grep -v parallel | sed 's/.*://' | awk '{print $1}' | paste -s -d" "`" >> $TEMPFILE
-cat target/output.log | grep '^Speed test' | grep parallel | awk '{print $8 " " $3 " " $4 ": " $9}' | sed 's/)://' >> $TEMPFILE
-
 if [ "$GITHUB_STATUS_ENABLE" = "" ]; then
     GITHUB_STATUS_ENABLE=""
 fi
@@ -57,12 +39,33 @@ if [ "$GITHUB_STATUS_ENABLE" != "" ]; then
         -d "{\"state\": \"pending\", \"description\": \"Started speed test\", \"context\": \"$GITHUB_STATUS_CONTEXT\"}"
 fi
 
+LOGFILE="`tempfile`"
 docker run -i --rm \
-            -v "`pwd`/target/":/tmp/target/ \
             --env COMMIT=$COMMIT \
-            $IMAGE_ID
+            --env MAX_TIMEOUT="$MAX_TIMEOUT" \
+            --env SUCCESS_TIME="$SUCCESS_TIME" \
+            $IMAGE_ID | tee $LOGFILE
+            
 
 if [ "$GITHUB_STATUS_ENABLE" != "" ]; then
+    # Create max 140 character long multiline status message usable for github commit status. Format as:
+    # 123456s                         <-- total time used to compare across commits
+    # 1.9K: 1000s                     <-- first convertion time
+    # 497K: 1000s                     <-- second conversion time
+    # 955K: 1000s                     <-- third conversion time
+    # 2.4M: 1000s                     <-- fourth conversion time
+    # 7.0M: 1000s 1000s 1000s 1000s   <-- fifth conversion time(s)
+    # 7.0M parallel x4: 4000s         <-- total time running in parallel
+
+    TEMPFILE="`tempfile`"
+    cat $LOGFILE | grep '^Total test time:' | awk '{print $4}' > $TEMPFILE
+    echo "`ls -lh src/resources/552974.xml | awk '{print $5}'`: `cat $LOGFILE | grep 552974 | grep '^Speed test' | grep -v parallel | sed 's/.*://' | awk '{print $1}' | paste -s -d" "`" >> $TEMPFILE
+    echo "`ls -lh src/resources/552739.xml | awk '{print $5}'`: `cat $LOGFILE | grep 552739 | grep '^Speed test' | grep -v parallel | sed 's/.*://' | awk '{print $1}' | paste -s -d" "`" >> $TEMPFILE
+    echo "`ls -lh src/resources/553184.xml | awk '{print $5}'`: `cat $LOGFILE | grep 553184 | grep '^Speed test' | grep -v parallel | sed 's/.*://' | awk '{print $1}' | paste -s -d" "`" >> $TEMPFILE
+    echo "`ls -lh src/resources/554664.xml | awk '{print $5}'`: `cat $LOGFILE | grep 554664 | grep '^Speed test' | grep -v parallel | sed 's/.*://' | awk '{print $1}' | paste -s -d" "`" >> $TEMPFILE
+    echo "`ls -lh src/resources/501035.xml | awk '{print $5}'`: `cat $LOGFILE | grep 501035 | grep '^Speed test' | grep -v parallel | sed 's/.*://' | awk '{print $1}' | paste -s -d" "`" >> $TEMPFILE
+    cat $LOGFILE | grep '^Speed test' | grep parallel | awk '{print $8 " " $3 " " $4 ": " $9}' | sed 's/)://' >> $TEMPFILE
+    
     curl "https://api.github.com/repos/daisy/pipeline/statuses/$GIT_COMMIT?access_token=$GITHUB_ACCESS_TOKEN" \
         -H "Content-Type: application/json" \
         -X POST \

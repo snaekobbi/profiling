@@ -3,8 +3,13 @@
 #set -x
 
 LOGFILE=/tmp/target/output.log
-MAX_TIMEOUT=600
-SUCCESS_TIME=60
+
+if [ "$MAX_TIMEOUT" = "" ]; then
+    MAX_TIMEOUT=600
+fi
+if [ "$SUCCESS_TIME" = "" ]; then
+    SUCCESS_TIME=60
+fi
 
 # initial values for timer
 TIMER_START=`date --utc +"%s"`
