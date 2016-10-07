@@ -63,11 +63,11 @@ function status {
 
 timer_start "Download Pipeline 2"
 cd ~/pipeline
-git fetch -a
-git checkout "$COMMIT"
+git fetch --all
+git checkout "$GIT_COMMIT"
 timer_end "success"
 
-echo "# Speed tests for `cd ~/pipeline && git rev-parse --short $COMMIT` ($COMMIT) - `date`" > $LOGFILE
+echo "# Speed tests for `cd ~/pipeline && git rev-parse --short $GIT_COMMIT` ($GIT_COMMIT) - `date`" > $LOGFILE
 
 timer_start "Build Pipeline 2"
 cd ~/pipeline
