@@ -62,9 +62,8 @@ function status {
 }
 
 timer_start "Download Pipeline 2"
-cd ~
-git clone https://github.com/daisy/pipeline.git
 cd ~/pipeline
+git fetch -a
 git checkout "$COMMIT"
 timer_end "success"
 
@@ -131,7 +130,7 @@ function run_speed_test_parallel {
             TEST_STATUS="error"
         fi
     fi
-    timer_end $COUNT "$TEST_STATUS"
+    timer_end "$TEST_STATUS"
     TOTAL_SPEED_TEST_TIME="`expr $TOTAL_SPEED_TEST_TIME + $TIMER`"
 }
 

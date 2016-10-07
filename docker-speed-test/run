@@ -45,7 +45,6 @@ docker run -i --rm \
             --env MAX_TIMEOUT="$MAX_TIMEOUT" \
             --env SUCCESS_TIME="$SUCCESS_TIME" \
             $IMAGE_ID | tee $LOGFILE
-            
 
 if [ "$GITHUB_STATUS_ENABLE" != "" ]; then
     # Create max 140 character long multiline status message usable for github commit status. Format as:
@@ -66,8 +65,22 @@ if [ "$GITHUB_STATUS_ENABLE" != "" ]; then
     echo "`ls -lh src/resources/501035.xml | awk '{print $5}'`: `cat $LOGFILE | grep 501035 | grep '^Speed test' | grep -v parallel | sed 's/.*://' | awk '{print $1}' | paste -s -d" "`" >> $TEMPFILE
     cat $LOGFILE | grep '^Speed test' | grep parallel | awk '{print $8 " " $3 " " $4 ": " $9}' | sed 's/)://' >> $TEMPFILE
     
+    if [ "`cat $LOGFILE | grep "^Speed test" | sed 's/.* //' | grep 'failure' | head -n 1 | wc -l`" = "1" ]; then
+        STATUS="failure"
+    else
+        if [ "`cat $LOGFILE | grep "^Speed test" | sed 's/.* //' | grep 'error' | head -n 1 | wc -l`" = "1" ]; then
+            STATUS="error"
+        else
+            if [ "`cat $LOGFILE | grep "^Speed test" | sed 's/.* //' | grep 'success' | head -n 1 | wc -l`" = "1" ]; then
+                STATUS="success"
+            else
+                STATUS="failure"
+            fi
+        fi
+    fi
+    
     curl "https://api.github.com/repos/daisy/pipeline/statuses/$GIT_COMMIT?access_token=$GITHUB_ACCESS_TOKEN" \
         -H "Content-Type: application/json" \
         -X POST \
-        -d "{\"state\": \"pending\", \"description\": \"`cat $TEMPFILE | grep -v ': *$' | paste -s -d"#" | sed 's/#/\\\\n/g'`\", \"context\": \"$GITHUB_STATUS_CONTEXT\"}"
+        -d "{\"state\": \"$STATUS\", \"description\": \"`cat $TEMPFILE | grep -v ': *$' | paste -s -d"#" | sed 's/#/\\\\n/g'`\", \"context\": \"$GITHUB_STATUS_CONTEXT\"}"
 fi
