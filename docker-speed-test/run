@@ -5,7 +5,7 @@ if [ "$GIT_COMMIT" = "" ]; then
     GIT_COMMIT="`git rev-parse HEAD 2>/dev/null`"
 fi
 
-if [ "$GIT_COMMIT" != ""]; then
+if [ "$GIT_COMMIT" != "" ]; then
     # Get the remotes containing this commit so that we can send commit status to all repos
     REMOTES="`git branch -r | grep -v subrepo | grep -v "[^ ] " | xargs git branch -r --contains $GIT_COMMIT | sed 's/^ *//' | sed 's/\/.*//' | sort | uniq | sed 's/[\r\n]/\n/g' | xargs -L 1 git remote get-url | sed 's/.*\/\([^/]*\/[^/]*\)$/\1/'`"
 fi
