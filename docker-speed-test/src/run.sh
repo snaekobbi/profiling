@@ -82,7 +82,12 @@ timer_end "success"
 
 timer_start "Starting Pipeline 2"
 daisy-pipeline/cli/dp2
-timer_end "success"
+STARTED_SUCCESSFULLY=$?
+if [ "$STARTED_SUCCESSFULLY" = "0" ]; then
+    timer_end "success"
+else
+    timer_end "failure"
+fi
 
 function run_speed_test {
     BOOK_ID="$1"
@@ -137,20 +142,22 @@ function run_speed_test_parallel {
 TOTAL_SPEED_TEST_TIME=0
 LAST_SUCCESSFUL_BOOK=""
 
-run_speed_test 552974 "Speed test #1"
-run_speed_test 552739 "Speed test #2"
-run_speed_test 553184 "Speed test #3"
-run_speed_test 554664 "Speed test #4"
-run_speed_test 501035 "Speed test #5"
+if [ "$LAST_TIMER_STATUS" = "success" ]; then
+    run_speed_test 552974 "Speed test #1"
+    run_speed_test 552739 "Speed test #2"
+    run_speed_test 553184 "Speed test #3"
+    run_speed_test 554664 "Speed test #4"
+    run_speed_test 501035 "Speed test #5"
 
-TIMER=0 && run_speed_test $LAST_SUCCESSFUL_BOOK "Speed test sequential #1"
-TIMER=0 && run_speed_test $LAST_SUCCESSFUL_BOOK "Speed test sequential #2"
-TIMER=0 && run_speed_test $LAST_SUCCESSFUL_BOOK "Speed test sequential #3"
+    TIMER=0 && run_speed_test $LAST_SUCCESSFUL_BOOK "Speed test sequential #1"
+    TIMER=0 && run_speed_test $LAST_SUCCESSFUL_BOOK "Speed test sequential #2"
+    TIMER=0 && run_speed_test $LAST_SUCCESSFUL_BOOK "Speed test sequential #3"
 
-SUCCESS_TIME=`expr $SUCCESS_TIME \* 4`
-if [ $SUCCESS_TIME -gt $MAX_TIMEOUT ]; then
-    SUCCESS_TIME=$MAX_TIMEOUT
+    SUCCESS_TIME=`expr $SUCCESS_TIME \* 4`
+    if [ $SUCCESS_TIME -gt $MAX_TIMEOUT ]; then
+        SUCCESS_TIME=$MAX_TIMEOUT
+    fi
+    run_speed_test_parallel 4 $LAST_SUCCESSFUL_BOOK "Speed test parallel"
 fi
-run_speed_test_parallel 4 $LAST_SUCCESSFUL_BOOK "Speed test parallel"
 
 echo "Total test time: ${TOTAL_SPEED_TEST_TIME}s ($LAST_TIMER_STATUS)" | tee -a $LOGFILE
