@@ -6,6 +6,7 @@ WORKDIR /root
 
 # Install dependencies
 RUN apt-get update && apt-get install -y git build-essential maven gradle libxml2-utils pcregrep rsync
+RUN update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
 
 # Build once, to download dependencies (Maven JARs, etc.)
 RUN git clone https://github.com/daisy/pipeline
