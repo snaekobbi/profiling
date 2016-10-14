@@ -15,7 +15,7 @@ RUN cd pipeline && make dist-zip
 RUN cd pipeline && make clean
 
 # Add additional remotes
-RUN cd pipeline && git remote add sbsdev https://github.com/sbsdev/pipeline && git fetch --all
+#RUN cd pipeline && git remote add sbsdev https://github.com/sbsdev/pipeline && git fetch --all
 
 ADD src/ /root/src/
 
