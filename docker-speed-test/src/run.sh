@@ -73,12 +73,22 @@ timer_start "Build Pipeline 2"
 cd ~/pipeline
 mkdir -p .maven-cache
 make dist-zip
-timer_end "success"
+BUILT_SUCCESSFULLY=$?
+if [ "$BUILT_SUCCESSFULLY" = "0" ]; then
+    timer_end "success"
+else
+    timer_end "failure"
+fi
 
 timer_start "Install Pipeline 2"
 cd ~
 unzip pipeline/pipeline2-*_linux.zip
-timer_end "success"
+INSTALLED_SUCCESSFULLY=$?
+if [ "$INSTALLED_SUCCESSFULLY" = "0" ]; then
+    timer_end "success"
+else
+    timer_end "failure"
+fi
 
 timer_start "Starting Pipeline 2"
 daisy-pipeline/cli/dp2

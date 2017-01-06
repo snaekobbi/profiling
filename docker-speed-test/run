@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 if [ "$GIT_COMMIT" = "" ]; then
     # Script is often started with daisy/pipeline repo as working directory (at least in Jenkins)
@@ -63,6 +64,10 @@ docker run -i --rm \
 # 7.0M parallel x4: 4000s         <-- total time running in parallel
 
 TEMPFILE="`tempfile`"
+SHORT_ERROR=""
+if [ "`cat $LOGFILE | grep "^[^ ]* Pipeline 2: [0-9]*s" | sed 's/.* //' | grep -v success | wc -l`" != "0" ]; then
+    SHORT_ERROR="`cat $LOGFILE | grep -i '[^ ]*\[error\]' | sed 's/\([a-zA-Z0-9:]\)\/[^ \t]*\/\([a-z0-9]\)/\1\/\2/g' | sed 's/[^a-zA-Z0-9 \t]/ /g' | sed 's/[ \t][ \t]*/ /g' | sed 's/\([^ \t]\{3\}\)[^ \t]*\([^ \t]\{3\}\)/\1\2/g' | sed 's/\(^\| \)err\(or\)\?\( \|$\)/\2/ig' | sed 's/\(^ *\| *$\)//' | sed 's/^[0-9]*//' | awk '!seen[$0]++' | sed 's/^\(.\{65\}\).*/\1/' | tr '\n' ' ' | sed 's/^\(.\{65\}\).*\(.\{65\}\)$/\1 \2/'`"
+fi
 cat $LOGFILE | grep '^Total test time:' | awk '{print $4}' > $TEMPFILE
 echo "`ls -lh src/resources/552974.xml | awk '{print $5}'`: `cat $LOGFILE | grep 552974 | grep '^Speed test' | grep -v parallel | sed 's/.*://' | awk '{print $1}' | paste -s -d" "`" >> $TEMPFILE
 echo "`ls -lh src/resources/552739.xml | awk '{print $5}'`: `cat $LOGFILE | grep 552739 | grep '^Speed test' | grep -v parallel | sed 's/.*://' | awk '{print $1}' | paste -s -d" "`" >> $TEMPFILE
@@ -85,15 +90,19 @@ else
     fi
 fi
 
+DESCRIPTION="`cat $TEMPFILE | grep -v ': *$' | paste -s -d"#" | sed 's/#/\\\\n/g'`"
+if [ "$SHORT_ERROR" != "" ]; then
+    DESCRIPTION="$SHORT_ERROR"
+fi
 if [ "$GITHUB_STATUS_ENABLE" != "" ]; then
     for REMOTE in $REMOTES; do
         curl "https://api.github.com/repos/$REMOTE/statuses/$GIT_COMMIT?access_token=$GITHUB_ACCESS_TOKEN" \
             -H "Content-Type: application/json" \
             -X POST \
-            -d "{\"state\": \"$STATUS\", \"description\": \"`cat $TEMPFILE | grep -v ': *$' | paste -s -d"#" | sed 's/#/\\\\n/g'`\", \"context\": \"$GITHUB_STATUS_CONTEXT\"}"
+            -d "{\"state\": \"$STATUS\", \"description\": \"`echo $DESCRIPTION`\", \"context\": \"$GITHUB_STATUS_CONTEXT\"}"
     done
 else
     echo
     echo "Status not sent to GitHub. Here's the JSON if you want to do it manually:"
-    echo "{\"state\": \"$STATUS\", \"description\": \"`cat $TEMPFILE | grep -v ': *$' | paste -s -d"#" | sed 's/#/\\\\n/g'`\", \"context\": \"$GITHUB_STATUS_CONTEXT\"}"
+    echo "{\"state\": \"$STATUS\", \"description\": \"`echo $DESCRIPTION`\", \"context\": \"$GITHUB_STATUS_CONTEXT\"}"
 fi
